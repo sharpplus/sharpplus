@@ -28,8 +28,13 @@ import zk.sharpplus.SharpPlusProver;
 import zk.sharpplus.SharpPlusVerifier;
 
 public class FinalExperiments {
+	
+	String ci(DecimalFormat dfZero, double v, double w) {
+		if(!(w>0)) return "\\confintv{"+dfZero.format(v)+"}{"+dfZero.format(0)+"}";
+		return 	"\\confintv{"+dfZero.format(v)+"}{"+dfZero.format(w)+"}";
+	}
 
-	void printAsScalabilityTable(double[][] results, int[] Rs, int[] Ns) {
+	void printAsScalabilityTable(double[][] results, double[][] ciwidths, int[] Rs, int[] Ns, boolean ci) {
 		DecimalFormat dfZero = new DecimalFormat("0.0");
 
 		for(int Ni=0;Ni<Ns.length;Ni++) {
@@ -40,7 +45,8 @@ public class FinalExperiments {
 		for(int Ri=0;Ri<Rs.length;Ri++) {
 			System.out.print(Rs[Ri]);
 			for(int Ni=0;Ni<Ns.length;Ni++) {
-				System.out.print(" & "+dfZero.format(results[Ri][Ni]));
+				if(ci) System.out.print(" & "+ci(dfZero, results[Ri][Ni], ciwidths[Ri][Ni]));
+				else System.out.print(" & "+dfZero.format(results[Ri][Ni]));
 			}
 			System.out.println(" \\\\");
 		}
@@ -59,6 +65,9 @@ public class FinalExperiments {
 		double[][] prvTimeResults = new double[Rs.length][Ns.length];
 		double[][] vrfTimeResults = new double[Rs.length][Ns.length];
 		double[][] sizeResults = new double[Rs.length][Ns.length];
+
+		double[][] prvTimeResults2 = new double[Rs.length][Ns.length];
+		double[][] vrfTimeResults2 = new double[Rs.length][Ns.length];
 
 		for(int Ri = 0; Ri < Rs.length; Ri++) {
 			int R = Rs[Ri];
@@ -127,11 +136,11 @@ public class FinalExperiments {
 				System.out.println((totSize2/(NN-1) - 1.*totSize*totSize/NN/NN));
 
 				String s = N+" "+(1.*totGen/NN)+","
-						+Math.sqrt((totGen2/(NN-1) - 1.*totGen*totGen/NN/NN))+","
+						+Math.sqrt((totGen2/(NN-1) - 1.*totGen*totGen/NN/NN)/NN)+","
 						+(1.*totVrf/NN)+","
-						+Math.sqrt((totVrf2/(NN-1) - 1.*totVrf*totVrf/NN/NN))+","
+						+Math.sqrt((totVrf2/(NN-1) - 1.*totVrf*totVrf/NN/NN)/NN)+","
 						+(1.*totSize/NN)+","
-						+Math.sqrt((totSize2/(NN-1) - 1.*totSize*totSize/NN/NN));
+						+Math.sqrt((totSize2/(NN-1) - 1.*totSize*totSize/NN/NN)/NN);
 
 				System.out.println(s);
 				writer.write(s+"\n");
@@ -139,17 +148,20 @@ public class FinalExperiments {
 				prvTimeResults[Ri][Ni] = 1.*totGen/NN;
 				vrfTimeResults[Ri][Ni] = 1.*totVrf/NN;
 				sizeResults[Ri][Ni] = 1.*totSize/NN / 1000;
+				
+				prvTimeResults2[Ri][Ni] = 1.96 * Math.sqrt((totGen2/(NN-1) - 1.*totGen*totGen/NN/NN)/NN);
+				vrfTimeResults2[Ri][Ni] = 1.96 * Math.sqrt((totVrf2/(NN-1) - 1.*totVrf*totVrf/NN/NN)/NN);
 			}
 
 			writer.close();
 		}
 
-		printAsScalabilityTable(prvTimeResults, Rs, Ns);
-		printAsScalabilityTable(vrfTimeResults, Rs, Ns);
-		printAsScalabilityTable(sizeResults, Rs, Ns);
+		printAsScalabilityTable(prvTimeResults, prvTimeResults2, Rs, Ns, true);
+		printAsScalabilityTable(vrfTimeResults, vrfTimeResults2, Rs, Ns, true);
+		printAsScalabilityTable(sizeResults, null, Rs, Ns, false);
 	}
 
-	void printAsComparisonTable(double[][] results, String[] methods, int[] Ns) {
+	void printAsComparisonTable(double[][] results, double[][] ciwidths, String[] methods, int[] Ns, boolean ci) {
 		DecimalFormat dfZero = new DecimalFormat("0.0");
 
 		for(int Ni=0;Ni<Ns.length;Ni++) {
@@ -160,7 +172,8 @@ public class FinalExperiments {
 		for(int Ri=0;Ri<methods.length;Ri++) {
 			System.out.print(methods[Ri]);
 			for(int Ni=0;Ni<Ns.length;Ni++) {
-				System.out.print(" & "+dfZero.format(results[Ri][Ni]));
+				if(ci) System.out.print(" & "+ci(dfZero, results[Ri][Ni], ciwidths[Ri][Ni]));
+				else System.out.print(" & "+dfZero.format(results[Ri][Ni]));
 			}
 			System.out.println(" \\\\");
 		}
@@ -171,6 +184,9 @@ public class FinalExperiments {
 		double[][] prvTimeResults = new double[5][Ns.length];
 		double[][] vrfTimeResults = new double[5][Ns.length];
 		double[][] sizeResults = new double[5][Ns.length];
+		
+		double[][] prvTimeResults2 = new double[5][Ns.length];
+		double[][] vrfTimeResults2 = new double[5][Ns.length];
 
 		int R = 256;
 
@@ -340,20 +356,23 @@ public class FinalExperiments {
 				prvTimeResults[i][Ni] = 1.*totGen[i]/NN;
 				vrfTimeResults[i][Ni] = 1.*totVrf[i]/NN;
 				sizeResults[i][Ni] = 1.*totSize[i]/NN / 1000;
+				
+				prvTimeResults2[i][Ni] = 1.96 * Math.sqrt((totGen2[i]/(NN-1) - 1.*totGen[i]*totGen[i]/NN/NN)/NN);
+				vrfTimeResults2[i][Ni] = 1.96 * Math.sqrt((totVrf2[i]/(NN-1) - 1.*totVrf[i]*totVrf[i]/NN/NN)/NN);
 			}
 		}
 		String[] methods = new String[] {"Bulletproofs", "\\sharp{}", "\\sharp{}$_{\\geq 0}$", "\\sharp{}$_{\\times}$", "\\name{}"};
 
-		printAsComparisonTable(prvTimeResults, methods, Ns);
-		printAsComparisonTable(vrfTimeResults, methods, Ns);
-		printAsComparisonTable(sizeResults, methods, Ns);
+		printAsComparisonTable(prvTimeResults, prvTimeResults2, methods, Ns, true);
+		printAsComparisonTable(vrfTimeResults, vrfTimeResults2, methods, Ns, true);
+		printAsComparisonTable(sizeResults, null, methods, Ns, false);
 	}
 
 	public void run() {
 		try {
 			int N = 100;
-			generateScalabilityTables(new int[] {32, 64, 128, 256, 512, 1024}, new int[] {1, 4, 16, 64, 256, 1024}, N);
 			generateComparisonTables(new int[] {1, 4, 16, 64, 256, 1024}, N); 
+			generateScalabilityTables(new int[] {32, 64, 128, 256, 512, 1024}, new int[] {1, 4, 16, 64, 256, 1024}, N);
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
